@@ -1,41 +1,48 @@
+import os
+import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import requests
 
 app = FastAPI()
 
-# Permitir que el frontend de Vercel se comunique con este backend
+# Esto permite que tu página de Vercel pueda hacer consultas aquí
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Luego lo cambiaremos por tu URL de Vercel por seguridad
+    allow_origins=["*"], 
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-SHODAN_API_KEY = "TU_API_KEY_AQUI" # Solo para probar, luego la ocultaremos
+# Aquí le decimos que busque la llave que pusiste en Render
+SHODAN_API_KEY = os.getenv("SHODAN_API_KEY")
+
+@app.get("/")
+def inicio():
+    return {"mensaje": "Servidor de Seguridad Activo"}
 
 @app.get("/analizar/{ip}")
 def analizar_ip(ip: str):
+    if not SHODAN_API_KEY:
+        return {"error": "Configuración de API incompleta"}
+    
     try:
-        # 1. Consultar a Shodan
         url = f"https://api.shodan.io/shodan/host/{ip}?key={SHODAN_API_KEY}"
         response = requests.get(url)
         data = response.json()
-
-        # 2. Lógica de cumplimiento (El "Wow")
-        puertos = data.get('ports', [])
-        riesgos = []
         
+        puertos = data.get('ports', [])
+        hallazgos = []
+        
+        # Lógica de cumplimiento
         if 21 in puertos:
-            riesgos.append("Uso de FTP detectado. Incumple principio de seguridad de Ley 1581 (Datos en texto plano).")
-        if 80 in puertos:
-            riesgos.append("Puerto 80 (HTTP) abierto. Se recomienda migrar a HTTPS para proteger la privacidad.")
-            
+            hallazgos.append("Puerto 21 (FTP): Riesgo alto de interceptación. Incumple Ley 1581.")
+        if 23 in puertos:
+            hallazgos.append("Puerto 23 (Telnet): Protocolo inseguro detectado.")
+        
         return {
-            "ip": ip,
-            "organizacion": data.get('org', 'Desconocida'),
+            "organizacion": data.get('org', 'No disponible'),
             "puertos_abiertos": puertos,
-            "vulnerabilidades": riesgos if riesgos else ["No se detectaron riesgos críticos inmediatos."]
+            "vulnerabilidades": hallazgos if hallazgos else ["Sin vulnerabilidades críticas evidentes."]
         }
-    except Exception as e:
-        return {"error": "No se pudo obtener información de esta IP o no es pública."}
+    except:
+        return {"error": "IP no encontrada o límite de API alcanzado"}
