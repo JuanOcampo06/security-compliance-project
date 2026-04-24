@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Esto permite que tu página de Vercel pueda hacer consultas aquí
+# Esto permite que la página de Vercel pueda hacer consultas aquí
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -13,7 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Aquí le decimos que busque la llave que pusiste en Render
+# Aquí le decimos que busque la llave que puse en Render
 SHODAN_API_KEY = os.getenv("SHODAN_API_KEY")
 
 @app.get("/")
