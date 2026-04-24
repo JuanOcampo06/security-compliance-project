@@ -1,4 +1,4 @@
-// Variable para almacenar la URL de tu backend en Render
+// Variable para almacenar la URL del backend en Render
 const backendURL = "https://security-compliance-project.onrender.com";
 
 async function iniciarAnalisis() {
